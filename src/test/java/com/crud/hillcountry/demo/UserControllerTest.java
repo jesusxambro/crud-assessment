@@ -134,10 +134,12 @@ public class UserControllerTest {
     @Rollback
     public void deleteById() throws Exception{
         this.repository.save(jesus);
+        this.repository.save(marcus);
         MockHttpServletRequestBuilder request = delete(String.format("/users/%d",jesus.getId()));
 
         this.mvc.perform(request)
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$.count").isNumber());
     }
     @Test
     @Transactional

@@ -126,8 +126,11 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void deleteUserById(@PathVariable Long id) {
+    public Map<String, Integer> deleteUserById(@PathVariable Long id) {
         this.repository.deleteById(id);
+        Map<String, Integer> count = new HashMap<>();
+        count.put("count", (int) this.repository.count());
+        return count;
     }
 //    @ResponseStatus(HttpStatus.NOT_FOUND)
 //    @ExceptionHandler(NoSuchElementException.class)
