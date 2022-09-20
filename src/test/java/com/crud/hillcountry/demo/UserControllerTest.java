@@ -3,6 +3,7 @@ package com.crud.hillcountry.demo;
 
 import com.crud.hillcountry.demo.dao.UserRepository;
 import com.crud.hillcountry.demo.model.User;
+import com.crud.hillcountry.demo.model.Authentication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,4 +119,90 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.email").value(newEmail))
                 .andExpect(jsonPath("$.id").value(marcus.getId()));
     }
+
+
+    /***
+     * Takes a DELETE request to /users/5
+     * Deletes the user from the database
+     * Renders the number of users that remain, like this:
+     * {
+     *   "count": 32
+     * }
+     */
+    @Test
+    @Transactional
+    @Rollback
+    public void deleteById() throws Exception{
+        this.repository.save(jesus);
+        MockHttpServletRequestBuilder request = delete(String.format("/users/%d",jesus.getId()));
+
+        this.mvc.perform(request)
+                .andExpect(status().isNoContent());
+    }
+    @Test
+    @Transactional
+    @Rollback
+    public void postWithIdentification() throws Exception {
+        /**
+         *         marcus.setPassword("password1");
+         *         marcus.setEmail("marcus.a.scott@gmail.com");
+         */
+        this.repository.save(marcus);
+        String json = "{\n" +
+                "    \"email\": \"marcus.a.scott@gmail.com\",\n" +
+                "    \"password\": \"password1\"\n" +
+                "  }";
+
+
+        MockHttpServletRequestBuilder request = post("/users/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json);
+
+
+        this.mvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.email").value("marcus.a.scott@gmail.com"))
+                .andExpect(jsonPath("$.user.id").value(String.format("%d",marcus.getId())))
+                .andExpect(jsonPath("$.authenticated").value("true"));
+
+
+    }
+    @Test
+    @Transactional
+    @Rollback
+    public void testingEmptyAuth() throws Exception{
+        this.repository.save(jesus);
+
+        String json2 = "{\n" +
+                "    \"email\": \"testing@test.com\",\n" +
+                "    \"password\": \"123456\"\n" +
+                "  }";
+        MockHttpServletRequestBuilder request2 = post("/users/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json2);
+
+        this.mvc.perform(request2)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.authenticated").value("false"));
+
+    }
+
+    /*{
+  "email": "angelica@example.com",
+  "password": "1234"
+}
+Finds the user by their email address
+Checks if their database password matches the given password
+If it matches, it should render
+{
+  "authenticated": true,
+  "user": {
+    "id": 12,
+    "email": "angelica@example.com"
+  }
+}
+If it does not match, it should return
+{
+  "authenticated": false
+}*/
 }

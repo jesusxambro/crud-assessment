@@ -1,13 +1,14 @@
 package com.crud.hillcountry.demo.controllers;
 
 import com.crud.hillcountry.demo.dao.UserRepository;
+import com.crud.hillcountry.demo.model.Authentication;
 import com.crud.hillcountry.demo.model.User;
 import com.crud.hillcountry.demo.model.UserPublic;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @RestController
 @RequestMapping("/users")
@@ -73,4 +74,66 @@ public class UserController {
         updatedUser.setEmail(this.repository.getReferenceById(userToUpdate.getId()).getEmail());
         return updatedUser;
     }
+    @PostMapping("/authenticate")
+    public Authentication authenticateUsers(@RequestBody Map<String, String> userToAuthMap) {
+        Authentication authUser = new Authentication();
+
+        UserPublic authenticatedUser = new UserPublic();
+        User userInArray = new User();
+        final User[] userToCheckArray = new User[1];
+        userToCheckArray[0] = userInArray;
+        final String[] password = new String[1];
+
+        userToAuthMap.forEach(
+                (key, value) -> {
+                    if (key.equals("email")) { //value.equals(this.repository.findByEmail(value).get().getEmail())
+                        userToCheckArray[0].setEmail(value);
+                    }
+                    if (key.equals("password")) {
+                        password[0] = value;
+                    }
+                }
+        );
+//        //return repository.findById(id).orElseThrow(() -> new NoSuchElementException(String.format("Record with id %d is not present", id)));**
+//         *
+//         */
+
+        Authentication noneFound = new Authentication();
+        boolean isPresent = this.repository.findByEmail(userToCheckArray[0].getEmail()).isPresent();
+        User inDatabase;
+        if (isPresent) {
+            inDatabase = this.repository.findByEmail(userToCheckArray[0].getEmail()).get();
+            if (inDatabase.getPassword().equals(password[0])) {
+
+                authenticatedUser.setEmail(inDatabase.getEmail());
+                authenticatedUser.setId(inDatabase.getId());
+                authUser.setAuthenticated(true);
+                authUser.setUser(authenticatedUser);
+                return authUser;
+            }
+        } else {
+            authUser.setAuthenticated(false);
+            return authUser;
+        }
+
+
+//        User userToCheck = userToCheckArray[0];
+        return authUser;
+
+    }
+
+
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
+    public void deleteUserById(@PathVariable Long id) {
+        this.repository.deleteById(id);
+    }
+//    @ResponseStatus(HttpStatus.NOT_FOUND)
+//    @ExceptionHandler(NoSuchElementException.class)
+//    public String handleElementNotFound(Exception e) {
+//        return e.getMessage();
+//    }
+
+
 }
